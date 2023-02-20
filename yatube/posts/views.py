@@ -14,7 +14,7 @@ def get_page(request, post_list):
     return paginator.get_page(page_number)
 
 
-@cache_page(20)
+@cache_page(20, key_prefix='index_page')
 def index(request):
     post_list = Post.objects.all().select_related('author', 'group')
     page_obj = get_page(request, post_list)
@@ -40,9 +40,11 @@ def group_posts(request, slug):
 def profile(request, username):
     author = get_object_or_404(User, username=username)
     author_posts = author.posts.all()
-    page_obj = get_page(request, author_posts)
-    following = author.Follow.select_related('author')
     template = 'posts/profile.html'
+    page_obj = get_page(request, author_posts)
+    following = True
+    if request.user not in Follow.objects.all().select_related('user'):
+        following = False
     context = {
         'author': author,
         'page_obj': page_obj,
@@ -92,9 +94,8 @@ def post_edit(request, post_id):
                     files=request.FILES or None,
                     instance=post)
     if not form.is_valid():
-        form.save()
         return redirect('posts:post_detail', post_id)
-
+    form.save()
     context = {
             'is_edit': True,
             'form': form,
@@ -118,10 +119,13 @@ def add_comment(request, post_id):
 
 @login_required
 def follow_index(request):
-    # информация о текущем пользователе доступна в переменной request.user
-
-    context = {}
-    return render(request, 'posts/follow.html', context)
+    following_list = Post.objects.filter('author')
+    page_obj = get_page(request, following_list)
+    template = 'posts/follow.html'
+    context = {
+            'page_obj': page_obj,
+    }
+    return render(request, template, context)
 
 
 @login_required
@@ -132,6 +136,7 @@ def profile_follow(request, username):
             user=request.user,
             author=author
         )
+        follow.save()
         context = {'follow': follow}
         return render(request, 'posts/follow.html', context)
     return redirect('posts:profile', username)
@@ -143,6 +148,4 @@ def profile_unfollow(request, username):
     follow = Follow.objects.get(author)
     if follow.exists():
         follow.delete()
-
     return render(request, 'posts/index.html')
-

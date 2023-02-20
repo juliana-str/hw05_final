@@ -225,7 +225,7 @@ class PostPagesTests(TestCase):
         response = (self.author.get(reverse(
                     'posts:post_edit',
                     kwargs={'post_id': self.post.pk,
-                            'username': self.author.username})
+                            'username': self.author})
         ))
         form_fields = {
             'group': forms.fields.ChoiceField,
