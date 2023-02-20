@@ -1,8 +1,10 @@
 from http import HTTPStatus
 
+from django.core.cache import cache
 from django.test import TestCase, Client
 
 from ..models import Group, Post, User
+
 
 
 GROUP_TITLE = 'Тестовая группа'
@@ -11,6 +13,10 @@ GROUP_DESCRIPTION = 'Тест описание'
 USER_USERNAME = 'Anonimus'
 USER_USERNAME1 = 'Vasya'
 POST_TEXT = 'Тестовая запись для тестового поста номер'
+
+
+
+cache.clear()
 
 
 class PostURLTests(TestCase):
@@ -42,7 +48,8 @@ class PostURLTests(TestCase):
             f'/posts/{self.post.pk}/': 'posts/post_detail.html',
             '/create/': 'posts/create_post.html',
             f'/posts/{self.post.pk}/edit/': 'posts/create_post.html',
-            f'/group/{GROUP_SLUG}/': 'posts/group_list.html'
+            f'/group/{GROUP_SLUG}/': 'posts/group_list.html',
+            f'posts/{self.post.pk}/comment/': 'posts/comments.html',
         }
         for address, template in templates_urls.items():
             with self.subTest(address=address):

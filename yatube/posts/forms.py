@@ -1,7 +1,8 @@
 from django import forms
+from django.forms import Textarea
 from django.utils.translation import gettext_lazy as _
 
-from .models import Post
+from .models import Comment, Post
 
 
 class PostForm(forms.ModelForm):
@@ -19,4 +20,22 @@ class PostForm(forms.ModelForm):
         }
         error_messages = {
             'text': {'max_length': _('Этот пост слишком длинный')},
+        }
+
+
+class CommentForm(forms.ModelForm):
+
+    class Meta:
+        model = Comment
+
+        fields = ('text',)
+        labels = {
+            'text': _('Текст комментария'),
+        }
+        help_texts = {
+            'text': _('Напишите свой комментарий'),
+        }
+        error_messages = {
+            'text': {'max_length':
+                         _('Этот комментарий слишком длинный')},
         }
