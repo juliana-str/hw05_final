@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.conf import settings
 
 from ..forms import CommentForm
-from ..models import Comment, Group, Post, User
+from ..models import Comment, Group, Post, User, Follow
 
 GROUP_TITLE = 'Тестовая группа'
 GROUP_SLUG = 'test-slug'
@@ -305,3 +305,46 @@ class PostPagesTests(TestCase):
             kwargs={'post_id': self.post.pk})
         )
         self.assertIn(self.comment, response.context['comments'])
+
+
+class FollowViewTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.guest_client = Client()
+        cls.user = User.objects.create_user(username=USER_USERNAME)
+        cls.authorized_client = Client()
+        cls.author = Client()
+        cls.author = User.objects.create_user(username=USER_USERNAME1)
+        cls.authorized_client.force_login(cls.user)
+
+        cls.post = Post.objects.create(
+            text=POST_TEXT,
+            author=cls.author,
+        )
+        cls.follow = Follow.objects.create(
+            author=cls.author,
+            user=cls.user
+        )
+
+    def test_follow_index(self):
+        response = self.authorized_client.get(reverse('posts:follow_index'))
+        template = 'posts/follow.html'
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertTemplateUsed(response, template)
+        self.assertIn(self.post.text, response.context['page_obj'])
+
+
+    def test_profile_follow(self):
+        response = self.authorized_client.get(
+            reverse('posts:profile_follow',
+                    kwargs={'username': self.author.username}))
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertTrue(Follow.objects.filter(
+            user=self.user, author=self.author
+        ).exists())
+
+    def test_profile_unfollow(self):
+        self.assertTrue(Follow.objects.filter(
+            user=self.user, author=self.author
+        ).exists())
