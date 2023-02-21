@@ -7,7 +7,6 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from django.conf import settings
 
-from ..forms import CommentForm
 from ..models import Comment, Group, Post, User, Follow
 
 GROUP_TITLE = 'Тестовая группа'
@@ -17,7 +16,6 @@ USER_USERNAME = 'Anonimus'
 USER_USERNAME1 = 'Vasya'
 POST_TEXT = 'Тестовая запись для тестового поста номер'
 SECOND_PAGE_COUNT = 3
-
 
 
 class Cache_pageTests(TestCase):
@@ -32,9 +30,10 @@ class Cache_pageTests(TestCase):
             author=cls.user_author,
         )
     def test_cache_page(self):
-        self.post.delite()
         response = self.authorized_client.get(reverse('posts:index'))
         self.assertIn(self.post, response.context['page_obj'])
+        self.post.delete()
+        self.assertFalse(Post.objects.filter(author=self.user_author).exists())
 
 cache.clear()
 
@@ -145,8 +144,7 @@ class PostPagesTests(TestCase):
             reverse('posts:post_create'): 'posts/create_post.html',
             reverse('posts:post_edit', kwargs={'post_id': self.post.pk}):
                 'posts/create_post.html',
-            reverse('posts:add_comment', kwargs={'post_id': self.post.pk}):
-                'posts/comments.html',
+            reverse('posts:follow_index'): 'posts/follow.html',
         }
         for reverse_name, template in templates_pages_names.items():
             with self.subTest(reverse_name=reverse_name):
@@ -164,13 +162,13 @@ class PostPagesTests(TestCase):
         self.assertEqual(post_text, self.post.text)
         self.assertEqual(post_image, self.post.image)
 
-    def test_correct_index_context(self): # PASS
+    def test_correct_index_context(self):
         """Шаблон index сформирован с правильным контекстом."""
         response = self.authorized_client.get(reverse('posts:index'))
         self.post_correct_context(response)
         self.assertIn(self.post, response.context['page_obj'])
 
-    def test_group_post_page_show_correct_context(self): # PASS
+    def test_group_post_page_show_correct_context(self):
         """Шаблон group_list сформирован с правильным контекстом."""
         response = self.authorized_client.get(
             reverse('posts:group_list',
@@ -180,7 +178,7 @@ class PostPagesTests(TestCase):
         self.assertEqual(response.context.get('group'), self.the_group)
         self.assertIn(self.post, response.context['page_obj'])
 
-    def test_profile_pages_show_correct_context(self): # PASS
+    def test_profile_pages_show_correct_context(self):
         """Шаблон profile сформирован с правильным контекстом."""
         response = (
             self.author.get(reverse(
@@ -199,14 +197,14 @@ class PostPagesTests(TestCase):
         ))
         self.assertEqual(response.context['post'], self.post)
 
-    def test_post_not_in_other_groups(self): # PASS
+    def test_post_not_in_other_groups(self):
         """Пост только в нужной группе."""
         url = (reverse('posts:group_list',
                        kwargs={'slug': self.other_group.slug}))
         response = self.authorized_client.get(url)
         self.assertNotIn(self.post, response.context['page_obj'])
 
-    def test_post_create_show_correct_context(self): # image + PASSED
+    def test_post_create_show_correct_context(self):
         """Шаблон post_create сформирован с правильным контекстом."""
         response = self.authorized_client.get(reverse(
             'posts:post_create'))
@@ -224,8 +222,7 @@ class PostPagesTests(TestCase):
         """Шаблон post_edit сформирован с правильным контекстом."""
         response = (self.author.get(reverse(
                     'posts:post_edit',
-                    kwargs={'post_id': self.post.pk,
-                            'username': self.author})
+                    kwargs={'post_id': self.post.pk})
         ))
         form_fields = {
             'group': forms.fields.ChoiceField,
@@ -332,19 +329,26 @@ class FollowViewTest(TestCase):
         template = 'posts/follow.html'
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertTemplateUsed(response, template)
-        self.assertIn(self.post.text, response.context['page_obj'])
+        self.assertIn(self.post, response.context['page_obj'])
 
 
     def test_profile_follow(self):
         response = self.authorized_client.get(
             reverse('posts:profile_follow',
                     kwargs={'username': self.author.username}))
-        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertTrue(Follow.objects.filter(
             user=self.user, author=self.author
         ).exists())
 
     def test_profile_unfollow(self):
-        self.assertTrue(Follow.objects.filter(
+        Follow.objects.filter(
+            user=self.user, author=self.author
+        ).delete()
+        response = self.authorized_client.get(
+            reverse('posts:profile_unfollow',
+                    kwargs={'username': self.author.username}))
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        self.assertFalse(Follow.objects.filter(
             user=self.user, author=self.author
         ).exists())

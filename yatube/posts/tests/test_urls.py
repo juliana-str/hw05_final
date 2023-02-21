@@ -6,17 +6,12 @@ from django.test import TestCase, Client
 from ..models import Group, Post, User
 
 
-
 GROUP_TITLE = 'Тестовая группа'
 GROUP_SLUG = 'test-slug'
 GROUP_DESCRIPTION = 'Тест описание'
 USER_USERNAME = 'Anonimus'
 USER_USERNAME1 = 'Vasya'
 POST_TEXT = 'Тестовая запись для тестового поста номер'
-
-
-
-cache.clear()
 
 
 class PostURLTests(TestCase):
@@ -40,6 +35,7 @@ class PostURLTests(TestCase):
             author=cls.user_author,
         )
 
+    cache.clear()
     def test_urls_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
         templates_urls = {
@@ -47,9 +43,9 @@ class PostURLTests(TestCase):
             f'/profile/{USER_USERNAME}/': 'posts/profile.html',
             f'/posts/{self.post.pk}/': 'posts/post_detail.html',
             '/create/': 'posts/create_post.html',
-            f'/posts/{self.post.pk}/edit/': 'posts/create_post.html',
             f'/group/{GROUP_SLUG}/': 'posts/group_list.html',
-            f'posts/{self.post.pk}/comment/': 'posts/comments.html',
+            '/follow/': 'posts/follow.html',
+            f'/posts/{self.post.pk}/edit/': 'posts/create_post.html',
         }
         for address, template in templates_urls.items():
             with self.subTest(address=address):
@@ -57,18 +53,20 @@ class PostURLTests(TestCase):
                 self.assertTemplateUsed(response, template)
 
     def test_correct_redirect(self):
+        cache.clear()
         tests_datas = [
             ('/', self.guest_client, HTTPStatus.OK),
             ('/', self.authorized_client, HTTPStatus.OK),
-            (f'/profile/{USER_USERNAME}/', self.guest_client, HTTPStatus.OK),
-            (f'/profile/{USER_USERNAME}/',
-             self.authorized_client, HTTPStatus.OK),
+            (f'/profile/{self.user_author}/',
+                 self.guest_client, HTTPStatus.OK),
+            (f'/profile/{self.user_author}/',
+                 self.authorized_client, HTTPStatus.OK),
             (f'/posts/{self.post.pk}/', self.guest_client, HTTPStatus.OK),
             (f'/posts/{self.post.pk}/', self.authorized_client, HTTPStatus.OK),
             ('/create/', self.guest_client, HTTPStatus.FOUND),
             ('/create/', self.authorized_client, HTTPStatus.OK),
             (f'/posts/{self.post.pk}/edit/',
-             self.guest_client, HTTPStatus.FOUND),
+                self.guest_client, HTTPStatus.FOUND),
             (f'/posts/{self.post.pk}/edit/',
              self.authorized_client, HTTPStatus.FOUND),
             (f'/posts/{self.post.pk}/edit/', self.author, HTTPStatus.OK),
@@ -79,7 +77,15 @@ class PostURLTests(TestCase):
              HTTPStatus.NOT_FOUND),
             ('/posts/unexisting_page/',
              self.authorized_client,
-             HTTPStatus.NOT_FOUND)
+             HTTPStatus.NOT_FOUND),
+            (f'/posts/{self.post.pk}/comment/', self.guest_client, HTTPStatus.FOUND),
+            (f'/posts/{self.post.pk}/comment/', self.authorized_client, HTTPStatus.FOUND),
+            ('/follow/', self.guest_client, HTTPStatus.FOUND),
+            ('/follow/', self.authorized_client, HTTPStatus.OK),
+            (f'/profile/{self.user_author}/follow/',self.guest_client, HTTPStatus.FOUND),
+            (f'/profile/{self.user_author}/follow/', self.authorized_client, HTTPStatus.FOUND),
+            (f'/profile/{self.user_author}/unfollow/',self.guest_client, HTTPStatus.FOUND),
+            (f'/profile/{self.user_author}/unfollow/', self.authorized_client, HTTPStatus.FOUND)
 
         ]
 

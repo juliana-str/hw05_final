@@ -41,16 +41,16 @@ def group_posts(request, slug):
 def profile(request, username):
     author = get_object_or_404(User, username=username)
     author_posts = author.posts.all()
-    template = 'posts/profile.html'
     page_obj = get_page(request, author_posts)
-    following = True
-    if request.user not in Follow.objects.all().select_related('user'):
-        following = False
+    following = False
+    if request.user.is_authenticated:
+        following = author.following.filter(user=request.user).exists()
     context = {
         'author': author,
         'page_obj': page_obj,
         'following': following
     }
+    template = 'posts/profile.html'
     return render(request, template, context)
 
 
@@ -87,23 +87,21 @@ def post_create(request):
 @login_required
 def post_edit(request, post_id):
     post = get_object_or_404(Post, id=post_id)
-
     if post.author != request.user:
         return redirect('posts:post_detail', post_id)
-
     form = PostForm(request.POST or None,
                     files=request.FILES or None,
                     instance=post)
-    if not form.is_valid():
-        return redirect('posts:post_detail', post_id)
-    form.save()
     context = {
             'is_edit': True,
             'form': form,
             'post': post
     }
-    template = 'posts/create_post.html'
-    return render(request, template, context)
+    if not form.is_valid():
+        template = 'posts/create_post.html'
+        return render(request, template, context)
+    form.save()
+    return redirect('posts:post_detail', post_id)
 
 
 @login_required
@@ -137,6 +135,7 @@ def profile_follow(request, username):
             user=request.user,
             author=author
         )
+        return redirect('posts:follow_index')
     return redirect('posts:profile', username=username)
 
 

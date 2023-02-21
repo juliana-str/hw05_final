@@ -47,7 +47,6 @@ class PostCreateFormTests(TestCase):
                 b'\x0A\x00\x3B'
         )
 
-
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
@@ -91,10 +90,15 @@ class PostCreateFormTests(TestCase):
             description=GROUP_DESCRIPTION
         )
         post_count = Post.objects.count()
+        uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=self.small_gif,
+            content_type='image/gif'
+        )
         form_edit_data = {
             'group': another_group.pk,
             'text': self.the_post.text + ' 1',
-            'image': 'posts/small.gif'
+            'image': uploaded
         }
         response = self.authorised_client.post(
             reverse('posts:post_edit',
@@ -108,7 +112,7 @@ class PostCreateFormTests(TestCase):
         self.assertEqual(form_edit_data.get('text'), edit_post.text)
         self.assertEqual(another_group, edit_post.group)
         self.assertEqual(self.the_post.author, edit_post.author)
-        self.assertEqual(self.the_post.image, edit_post.image)
+        self.assertEqual('posts/small.gif', edit_post.image)
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertRedirects(response, reverse('posts:post_detail',
                              kwargs={'post_id': self.the_post.pk}))

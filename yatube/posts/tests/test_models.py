@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from ..models import Group, Post, Comment
+from ..models import Group, Post, Comment, Follow
 
 User = get_user_model()
 
@@ -94,3 +94,31 @@ class CommentModelTest(TestCase):
 
     def test_models_have_correct_object_names(self):
         self.assertEqual(self.comment.text[:15], str(self.comment))
+
+
+class FollowModelTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = User.objects.create_user(username='Юзер')
+        cls.author = User.objects.create_user(username='Автор')
+        cls.post = Post.objects.create(
+            author=cls.author,
+            text='Тестовая запись для тестового поста',
+        )
+        cls.follow = Follow.objects.create(
+            user=cls.user,
+            author=cls.post.author,
+        )
+
+    def test_verbose_name(self):
+        """verbose_name в полях совпадает с ожидаемым."""
+        follow = FollowModelTest.follow
+        field_verboses = {
+            'author': 'Автор',
+            'user': 'Пользователь',
+        }
+        for field, expected_value in field_verboses.items():
+            with self.subTest(field=field):
+                self.assertEqual(
+                    follow._meta.get_field(field).verbose_name, expected_value)

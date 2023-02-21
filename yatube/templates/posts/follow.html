@@ -4,12 +4,13 @@
 {% block title %}Последние обновления авторов{% endblock %}
 {% block content %}
   {% include 'includes/switcher.html' %}
-  <h2>Авторы, на которых вы подписаны</h2>
+  <h1>Авторы, на которых вы подписаны</h1>
   {% for post in page_obj %}
        <article>
           <ul>
             <li>
-              Автор: {{ post.author.get_full_name }}
+              <a href="{% url 'posts:profile' post.author.username %}">
+              Автор: {{ post.author.get_full_name }}</a>
             </li>
             <li>
               Дата публикации: {{ post.pub_date|date:"d E Y" }}
