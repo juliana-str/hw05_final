@@ -6,13 +6,13 @@ User = get_user_model()
 
 
 class Follow(models.Model):
-    user  =  models.ForeignKey(
+    user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='follower',
         verbose_name='Пользователь'
     )
-    author  = models.ForeignKey(
+    author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='following',
@@ -59,6 +59,7 @@ class Post(models.Model):
         blank=True,
         null=True
     )
+
     class Meta:
         ordering = ('-pub_date',)
         verbose_name = 'Пост'

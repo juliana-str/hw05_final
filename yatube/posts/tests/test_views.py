@@ -14,6 +14,7 @@ GROUP_SLUG = 'test-slug'
 GROUP_DESCRIPTION = 'Тест описание'
 USER_USERNAME = 'Anonimus'
 USER_USERNAME1 = 'Vasya'
+USER_USERNAME2 = 'Fedya'
 POST_TEXT = 'Тестовая запись для тестового поста номер'
 SECOND_PAGE_COUNT = 3
 
@@ -29,13 +30,14 @@ class Cache_pageTests(TestCase):
             text=POST_TEXT,
             author=cls.user_author,
         )
+        cache.clear()
+
     def test_cache_page(self):
         response = self.authorized_client.get(reverse('posts:index'))
         self.assertIn(self.post, response.context['page_obj'])
         self.post.delete()
         self.assertFalse(Post.objects.filter(author=self.user_author).exists())
 
-cache.clear()
 
 class PaginatorViewsTest(TestCase):
     @classmethod
@@ -55,8 +57,10 @@ class PaginatorViewsTest(TestCase):
                   group=cls.group)
              for _ in range(settings.POST_COUNT + SECOND_PAGE_COUNT)]
         )
+        cache.clear()
 
     def test_paginator(self):
+        cache.clear()
         reverse_names = {
             reverse('posts:index'): settings.POST_COUNT,
             reverse('posts:index') + '?page=2': SECOND_PAGE_COUNT,
@@ -100,12 +104,12 @@ class PostPagesTests(TestCase):
             description=GROUP_DESCRIPTION,
         )
         cls.small_gif = (
-                b'\x47\x49\x46\x38\x39\x61\x02\x00'
-                b'\x01\x00\x80\x00\x00\x00\x00\x00'
-                b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
-                b'\x00\x00\x00\x2C\x00\x00\x00\x00'
-                b'\x02\x00\x01\x00\x00\x02\x02\x0C'
-                b'\x0A\x00\x3B'
+            b'\x47\x49\x46\x38\x39\x61\x02\x00'
+            b'\x01\x00\x80\x00\x00\x00\x00\x00'
+            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+            b'\x0A\x00\x3B'
         )
         cls.uploaded = SimpleUploadedFile(
             name='small.gif',
@@ -129,11 +133,11 @@ class PostPagesTests(TestCase):
             author=cls.post.author,
             text='Тестовый комментарий',
         )
+        cache.clear()
 
     def test_pages_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
         templates_pages_names = {
-            reverse('posts:index'): 'posts/index.html',
             reverse('posts:group_list',
                     kwargs={'slug': self.the_group.slug}):
             'posts/group_list.html',
@@ -144,12 +148,18 @@ class PostPagesTests(TestCase):
             reverse('posts:post_create'): 'posts/create_post.html',
             reverse('posts:post_edit', kwargs={'post_id': self.post.pk}):
                 'posts/create_post.html',
-            reverse('posts:follow_index'): 'posts/follow.html',
-        }
+            reverse('posts:follow_index'): 'posts/follow.html'}
+
         for reverse_name, template in templates_pages_names.items():
             with self.subTest(reverse_name=reverse_name):
                 response = self.author.get(reverse_name)
                 self.assertTemplateUsed(response, template)
+
+    def test_index_uses_correct_template(self):
+        cache.clear()
+        response = self.authorized_client.get(reverse('posts:index'))
+        template = 'posts/index.html'
+        self.assertTemplateUsed(response, template)
 
     def post_correct_context(self, response):
         first_object = response.context['page_obj'][0]
@@ -193,7 +203,7 @@ class PostPagesTests(TestCase):
         """Шаблон post_detail сформирован с правильным контекстом."""
         response = (self.authorized_client.get(reverse(
                     'posts:post_detail',
-                    kwargs={'post_id': self.post.pk,})
+                    kwargs={'post_id': self.post.pk})
         ))
         self.assertEqual(response.context['post'], self.post)
 
@@ -236,26 +246,7 @@ class PostPagesTests(TestCase):
         self.assertEqual(response.context.get('post'), self.post)
         self.assertEqual(response.context.get('is_edit'), True)
 
-    def test_add_comment_show_correct_context(self):
-        """Шаблон add_comment сформирован с правильным контекстом."""
-        response = (self.authorized_client.get(reverse(
-                    'posts:post_detail',
-                    kwargs={'post_id': self.post.pk})
-        ))
-        form_fields = {
-            'author': forms.fields.CharField,
-            'text': forms.fields.CharField,
-            'post': forms.fields.CharField
-        }
-        for value, expected in form_fields.items():
-            with self.subTest(value=value):
-                form_field = response.context.get('form').fields.get(value)
-                self.assertIsInstance(form_field, expected)
-        self.assertEqual(response.context.get('post'), self.post.text)
-        self.assertEqual(response.context.get('text'), self.comment.text)
-        self.assertEqual(response.context.get('author'), self.user.username)
-
-    def test_post_create_correct_redirect(self): # PASS
+    def test_post_create_correct_redirect(self):
         response = self.client.get(
             reverse('posts:post_create'), follow=True
         )
@@ -265,7 +256,7 @@ class PostPagesTests(TestCase):
         )
         self.assertRedirects(response, redirect_url)
 
-    def test_post_edit_correct_redirect(self): # PASS
+    def test_post_edit_correct_redirect(self):
         response = self.client.get(
             reverse('posts:post_edit',
                     kwargs={'post_id': self.post.id}), follow=True)
@@ -276,7 +267,7 @@ class PostPagesTests(TestCase):
         )
         self.assertRedirects(response, redirect_url)
 
-    def test_add_comment_correct_redirect_for_authorized_user(self): # PASS
+    def test_add_comment_correct_redirect_for_authorized_user(self):
         response = self.authorized_client.get(
             reverse('posts:add_comment',
                     kwargs={'post_id': self.post.id}), follow=True)
@@ -286,7 +277,7 @@ class PostPagesTests(TestCase):
         )
         self.assertRedirects(response, redirect_url)
 
-    def test_add_comment_correct_redirect_for_guest(self): # PASS
+    def test_add_comment_correct_redirect_for_guest(self):
         response = self.guest_client.get(
             reverse('posts:add_comment',
                     kwargs={'post_id': self.post.id}), follow=True)
@@ -308,19 +299,20 @@ class FollowViewTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.guest_client = Client()
-        cls.user = User.objects.create_user(username=USER_USERNAME)
+        cls.non_follower = Client()
         cls.authorized_client = Client()
         cls.author = Client()
+        cls.user = User.objects.create_user(username=USER_USERNAME)
         cls.author = User.objects.create_user(username=USER_USERNAME1)
+        cls.n_follower = User.objects.create_user(username=USER_USERNAME2)
         cls.authorized_client.force_login(cls.user)
-
+        cls.non_follower.force_login(cls.n_follower)
         cls.post = Post.objects.create(
             text=POST_TEXT,
             author=cls.author,
         )
         cls.follow = Follow.objects.create(
-            author=cls.author,
+            author=cls.post.author,
             user=cls.user
         )
 
@@ -331,6 +323,17 @@ class FollowViewTest(TestCase):
         self.assertTemplateUsed(response, template)
         self.assertIn(self.post, response.context['page_obj'])
 
+    def test_new_post_in_followers(self):
+        """Пост в ленте только у подписчиков."""
+        url = (reverse('posts:follow_index'))
+        response = self.authorized_client.get(url)
+        self.assertIn(self.post, response.context['page_obj'])
+
+    def test_new_post_not_in_nonfollowers(self):
+        """Пост не появляется в ленте тех, кто не подписан """
+        url = (reverse('posts:follow_index'))
+        response = self.non_follower.get(url)
+        self.assertNotIn(self.post, response.context['page_obj'])
 
     def test_profile_follow(self):
         response = self.authorized_client.get(

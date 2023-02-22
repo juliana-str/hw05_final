@@ -3,10 +3,12 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.core.paginator import Paginator
 from django.conf import settings
 from django.views.decorators.cache import cache_page
-from requests import delete
 
 from .forms import CommentForm, PostForm
 from .models import Comment, Group, Post, User, Follow
+
+
+CACHE_SEC = 20
 
 
 def get_page(request, post_list):
@@ -15,7 +17,7 @@ def get_page(request, post_list):
     return paginator.get_page(page_number)
 
 
-@cache_page(20, key_prefix='index_page')
+@cache_page(CACHE_SEC, key_prefix='index_page')
 def index(request):
     post_list = Post.objects.all().select_related('author', 'group')
     page_obj = get_page(request, post_list)
@@ -93,9 +95,9 @@ def post_edit(request, post_id):
                     files=request.FILES or None,
                     instance=post)
     context = {
-            'is_edit': True,
-            'form': form,
-            'post': post
+        'is_edit': True,
+        'form': form,
+        'post': post
     }
     if not form.is_valid():
         template = 'posts/create_post.html'
@@ -122,7 +124,7 @@ def follow_index(request):
     page_obj = get_page(request, following_posts)
     template = 'posts/follow.html'
     context = {
-            'page_obj': page_obj,
+        'page_obj': page_obj,
     }
     return render(request, template, context)
 

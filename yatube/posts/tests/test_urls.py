@@ -35,9 +35,9 @@ class PostURLTests(TestCase):
             author=cls.user_author,
         )
 
-    cache.clear()
     def test_urls_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
+        cache.clear()
         templates_urls = {
             '/': 'posts/index.html',
             f'/profile/{USER_USERNAME}/': 'posts/profile.html',
@@ -58,9 +58,9 @@ class PostURLTests(TestCase):
             ('/', self.guest_client, HTTPStatus.OK),
             ('/', self.authorized_client, HTTPStatus.OK),
             (f'/profile/{self.user_author}/',
-                 self.guest_client, HTTPStatus.OK),
+                self.guest_client, HTTPStatus.OK),
             (f'/profile/{self.user_author}/',
-                 self.authorized_client, HTTPStatus.OK),
+                self.authorized_client, HTTPStatus.OK),
             (f'/posts/{self.post.pk}/', self.guest_client, HTTPStatus.OK),
             (f'/posts/{self.post.pk}/', self.authorized_client, HTTPStatus.OK),
             ('/create/', self.guest_client, HTTPStatus.FOUND),
@@ -78,15 +78,20 @@ class PostURLTests(TestCase):
             ('/posts/unexisting_page/',
              self.authorized_client,
              HTTPStatus.NOT_FOUND),
-            (f'/posts/{self.post.pk}/comment/', self.guest_client, HTTPStatus.FOUND),
-            (f'/posts/{self.post.pk}/comment/', self.authorized_client, HTTPStatus.FOUND),
+            (f'/posts/{self.post.pk}/comment/',
+             self.guest_client, HTTPStatus.FOUND),
+            (f'/posts/{self.post.pk}/comment/',
+             self.authorized_client, HTTPStatus.FOUND),
             ('/follow/', self.guest_client, HTTPStatus.FOUND),
             ('/follow/', self.authorized_client, HTTPStatus.OK),
-            (f'/profile/{self.user_author}/follow/',self.guest_client, HTTPStatus.FOUND),
-            (f'/profile/{self.user_author}/follow/', self.authorized_client, HTTPStatus.FOUND),
-            (f'/profile/{self.user_author}/unfollow/',self.guest_client, HTTPStatus.FOUND),
-            (f'/profile/{self.user_author}/unfollow/', self.authorized_client, HTTPStatus.FOUND)
-
+            (f'/profile/{self.user_author}/follow/',
+             self.guest_client, HTTPStatus.FOUND),
+            (f'/profile/{self.user_author}/follow/',
+             self.authorized_client, HTTPStatus.FOUND),
+            (f'/profile/{self.user_author}/unfollow/',
+             self.guest_client, HTTPStatus.FOUND),
+            (f'/profile/{self.user_author}/unfollow/',
+             self.authorized_client, HTTPStatus.FOUND)
         ]
 
         for address, client, response_status in tests_datas:
