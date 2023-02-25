@@ -38,6 +38,7 @@ class PostURLTests(TestCase):
 
     def test_urls_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
+        cache.clear()
         templates_urls = {
             '/': 'posts/index.html',
             f'/profile/{self.user_author.username}/': 'posts/profile.html',
