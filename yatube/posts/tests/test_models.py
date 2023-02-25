@@ -48,6 +48,7 @@ class PostModelTest(TestCase):
                     post._meta.get_field(field).help_text, expected_value)
 
     def test_models_have_correct_object_names(self):
+        """Проверка корректного отображения названия группы, поста."""
         self.assertEqual(self.post.text[:15], str(self.post))
         self.assertEqual(self.group.title, str(self.group))
 

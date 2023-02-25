@@ -33,6 +33,7 @@ class Cache_pageTests(TestCase):
         cache.clear()
 
     def test_cache_page(self):
+        """Проверка правильности работы cache."""
         response = self.authorized_client.get(reverse('posts:index'))
         self.assertIn(self.post, response.context['page_obj'])
         self.post.delete()
@@ -156,12 +157,14 @@ class PostPagesTests(TestCase):
                 self.assertTemplateUsed(response, template)
 
     def test_index_uses_correct_template(self):
+        """URL-адрес использует соответствующий шаблон."""
         cache.clear()
         response = self.authorized_client.get(reverse('posts:index'))
         template = 'posts/index.html'
         self.assertTemplateUsed(response, template)
 
     def post_correct_context(self, response):
+        """В пост передается корректный контекст."""
         first_object = response.context['page_obj'][0]
         post_group = first_object.group
         post_text = first_object.text
@@ -247,6 +250,7 @@ class PostPagesTests(TestCase):
         self.assertEqual(response.context.get('is_edit'), True)
 
     def test_post_create_correct_redirect(self):
+        """Корректный редирект после создания поста."""
         response = self.client.get(
             reverse('posts:post_create'), follow=True
         )
@@ -257,6 +261,7 @@ class PostPagesTests(TestCase):
         self.assertRedirects(response, redirect_url)
 
     def test_post_edit_correct_redirect(self):
+        """Корректный редирект после редактирования поста."""
         response = self.client.get(
             reverse('posts:post_edit',
                     kwargs={'post_id': self.post.id}), follow=True)
@@ -268,6 +273,8 @@ class PostPagesTests(TestCase):
         self.assertRedirects(response, redirect_url)
 
     def test_add_comment_correct_redirect_for_authorized_user(self):
+        """Корректный редирект после комментирования поста для
+            авторизизированного посетителя."""
         response = self.authorized_client.get(
             reverse('posts:add_comment',
                     kwargs={'post_id': self.post.id}), follow=True)
@@ -278,6 +285,8 @@ class PostPagesTests(TestCase):
         self.assertRedirects(response, redirect_url)
 
     def test_add_comment_correct_redirect_for_guest(self):
+        """Корректный редирект после комментирования поста для
+            неавторизизированного посетителя."""
         response = self.guest_client.get(
             reverse('posts:add_comment',
                     kwargs={'post_id': self.post.id}), follow=True)
@@ -288,6 +297,7 @@ class PostPagesTests(TestCase):
         self.assertRedirects(response, redirect_url)
 
     def test_comment_exist_on_post_detail(self):
+        """Наличие комментария на странице поста."""
         response = self.guest_client.get(reverse(
             'posts:post_detail',
             kwargs={'post_id': self.post.pk})
@@ -317,6 +327,7 @@ class FollowViewTest(TestCase):
         )
 
     def test_follow_index(self):
+        """Шаблон follow сформирован с правильным контекстом.."""
         response = self.authorized_client.get(reverse('posts:follow_index'))
         template = 'posts/follow.html'
         self.assertEqual(response.status_code, HTTPStatus.OK)
@@ -330,12 +341,13 @@ class FollowViewTest(TestCase):
         self.assertIn(self.post, response.context['page_obj'])
 
     def test_new_post_not_in_nonfollowers(self):
-        """Пост не появляется в ленте тех, кто не подписан """
+        """Пост не появляется в ленте тех, кто не подписан. """
         url = (reverse('posts:follow_index'))
         response = self.non_follower.get(url)
         self.assertNotIn(self.post, response.context['page_obj'])
 
     def test_profile_follow(self):
+        """В профайле автора есть возможность подписки."""
         response = self.authorized_client.get(
             reverse('posts:profile_follow',
                     kwargs={'username': self.author.username}))
@@ -345,6 +357,7 @@ class FollowViewTest(TestCase):
         ).exists())
 
     def test_profile_unfollow(self):
+        """В профайле автора есть возможность отподписки."""
         Follow.objects.filter(
             user=self.user, author=self.author
         ).delete()

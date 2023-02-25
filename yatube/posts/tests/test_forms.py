@@ -26,8 +26,8 @@ class PostCreateFormTests(TestCase):
         super().setUpClass()
         cls.guest_client = Client()
         cls.user = User.objects.create_user(username=USER_USERNAME)
-        cls.authorised_client = Client()
-        cls.authorised_client.force_login(cls.user)
+        cls.authorized_client = Client()
+        cls.authorized_client.force_login(cls.user)
         cls.the_group = Group.objects.create(
             title=GROUP_TITLE,
             slug=GROUP_SLUG,
@@ -67,7 +67,7 @@ class PostCreateFormTests(TestCase):
             'author': self.user,
             'image': uploaded,
         }
-        response = self.authorised_client.post(
+        response = self.authorized_client.post(
             reverse('posts:post_create'),
             data=form_data,
             follow=True
@@ -109,7 +109,7 @@ class PostCreateFormTests(TestCase):
             'text': self.the_post.text + ' 1',
             'image': uploaded
         }
-        response = self.authorised_client.post(
+        response = self.authorized_client.post(
             reverse('posts:post_edit',
                     kwargs={'post_id': self.the_post.pk}),
             data=form_edit_data,
@@ -125,6 +125,20 @@ class PostCreateFormTests(TestCase):
         self.assertEqual(self.the_post.author, edit_post.author)
         self.assertIsNotNone(edit_post.image)
 
+        old_group_response = self.authorized_client.get(
+            reverse('posts:group_list', args=(self.the_group.slug,))
+        )
+        self.assertEqual(
+            old_group_response.context['page_obj'].paginator.count, 0
+        )
+
+        new_group_response = self.authorized_client.get(
+            reverse('posts:group_list', args=(another_group.slug,))
+        )
+        self.assertEqual(
+            new_group_response.context['page_obj'].paginator.count, 1
+        )
+
 
 class CommentCreateFormTests(TestCase):
     @classmethod
@@ -132,8 +146,8 @@ class CommentCreateFormTests(TestCase):
         super().setUpClass()
         cls.user = User.objects.create_user(username=USER_USERNAME)
         cls.author = User.objects.create_user(username='Fedya')
-        cls.authorised_client = Client()
-        cls.authorised_client.force_login(cls.user)
+        cls.authorized_client = Client()
+        cls.authorized_client.force_login(cls.user)
         cls.post = Post.objects.create(
             author=cls.author,
             text=POST_TEXT,
@@ -146,7 +160,7 @@ class CommentCreateFormTests(TestCase):
             'author': self.user,
             'text': 'Тестовый комментарий',
         }
-        response = self.authorised_client.post(
+        response = self.authorized_client.post(
             reverse('posts:add_comment',
                     kwargs={'post_id': self.post.pk}),
             data=form_data,
@@ -161,3 +175,7 @@ class CommentCreateFormTests(TestCase):
         self.assertRedirects(response,
                              reverse('posts:post_detail',
                                      kwargs={'post_id': self.post.pk}))
+        new_comment = Comment.objects.latest('id')
+
+        self.assertEqual(new_comment.author, self.user)
+        self.assertEqual(new_comment.post, self.post)
