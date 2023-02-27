@@ -95,7 +95,9 @@ class PostURLTests(TestCase):
             (f'/profile/{self.user_author}/unfollow/',
              self.guest_client, HTTPStatus.FOUND),
             (f'/profile/{self.user_author}/unfollow/',
-             self.authorized_client, HTTPStatus.FOUND)
+             self.authorized_client, HTTPStatus.FOUND),
+            (f'/posts/{self.post.pk}/delete/',
+             self.author, HTTPStatus.FOUND),
         ]
 
         for address, client, response_status in tests_datas:

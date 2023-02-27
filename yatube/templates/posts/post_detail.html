@@ -39,9 +39,14 @@
         {{ post.text|linebreaks }}
       </p>
       {% if post.author == request.user %}
-        <form action="{% url 'posts:post_edit' post.id %}">
-          <button class="btn btn-primary">Редактировать пост</button>
-        </form>
+        <div class="btn-group">
+          <form action="{% url 'posts:post_edit' post.id %}">
+            <button class="btn btn-primary">Редактировать пост</button>
+          </form>
+          <form action="{% url 'posts:post_delete' post.id %}">
+            <button class="btn btn-primary">Удалить пост</button>
+          </form>
+        </div>
       {% endif %}
       {% include 'posts/comments.html' %}
     </article>

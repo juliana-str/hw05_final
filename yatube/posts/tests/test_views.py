@@ -249,6 +249,18 @@ class PostPagesTests(TestCase):
         self.assertEqual(response.context.get('post'), self.post)
         self.assertEqual(response.context.get('is_edit'), True)
 
+    def test_post_delete(self):
+        post_for_del = Post.objects.create(
+            text="post for delete",
+            author=self.user_author,
+            group=self.the_group,
+        )
+        post_count = Post.objects.count()
+        post_for_del.delete()
+        last_post = Post.objects.latest('pub_date')
+        self.assertEqual(Post.objects.count(), post_count - 1)
+        self.assertNotEqual(last_post.text, post_for_del.text)
+
     def test_post_create_correct_redirect(self):
         """Корректный редирект после создания поста."""
         response = self.client.get(
@@ -269,6 +281,17 @@ class PostPagesTests(TestCase):
         redirect_url = (
             reverse('users:login') + '?next=' + reverse(
                 'posts:post_edit', kwargs={'post_id': self.post.pk})
+        )
+        self.assertRedirects(response, redirect_url)
+
+    def test_post_delete_correct_redirect(self):
+        """Корректный редирект после удаления поста."""
+        response = self.author.get(
+            reverse('posts:post_delete',
+                    kwargs={'post_id': self.post.id}), follow=True)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        redirect_url = (
+            reverse('posts:profile', kwargs={'username': self.post.author})
         )
         self.assertRedirects(response, redirect_url)
 
