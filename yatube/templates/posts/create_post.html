@@ -34,13 +34,14 @@
               </div>
             {% endfor %}
           {% endif %}
-          <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
+          <form method="post" enctype="multipart/form-data"
             {% if is_edit %}
-              {% url 'posts:post_edit' post.id %}
+              action="{% url 'posts:post_edit' post.id %}"
             {% else %}
-              {% url 'posts:post_create' %}
+              action="{% url 'posts:post_create' %}"
             {% endif %}
+          >
+            {% csrf_token %}
             {% for field in form %}
               {% thumbnail post.image "960x339" crop="center" upscale=True as im %}
                 <img class="card-img my-2" src="{{ im.url }}">
