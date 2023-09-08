@@ -1,4 +1,4 @@
-# "Социальная сеть Yatube" (hw05_final)
+# "Социальная сеть Yatube" (yatube_final)
 
 ## 1. [Описание](#1)
 ## 2. [Установка](#2)
@@ -23,10 +23,10 @@
 
 Перед запуском необходимо склонировать проект:
 ```bash
-git clone git@github.com:juliana-str/hw05_final.git
+git clone git@github.com:juliana-str/yatube_final.git
 ```
 ```
-cd hw05_final/
+cd yatube_final/
 ```
 
 ---
