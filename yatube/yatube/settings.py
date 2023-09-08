@@ -23,13 +23,15 @@ STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static'),)
 SECRET_KEY = '&pwid-thmm^bz5rpqxpv$*critg81&jqh!69hci01u=or*5q+9'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     '[::1]',
     'testserver',
+        'www.julianka.pythonanywhere.com',
+        'julianka.pythonanywhere.com',
 ]
 
 
