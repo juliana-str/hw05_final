@@ -34,7 +34,6 @@ ALLOWED_HOSTS = [
         'julianka.pythonanywhere.com',
 ]
 
-
 # Application definition
 
 INSTALLED_APPS = [
